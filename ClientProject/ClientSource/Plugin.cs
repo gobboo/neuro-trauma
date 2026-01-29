@@ -5,7 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Barotrauma;
 
-namespace MyModName
+namespace AgnesControl
 {
     public partial class Plugin : IAssemblyPlugin
     {

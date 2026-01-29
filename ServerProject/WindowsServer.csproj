@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <Platforms>x64</Platforms>
@@ -11,7 +11,7 @@
   </PropertyGroup>
 
   <Import Project="..\SharedProject\SharedProject.projitems" Label="Shared" />
-  <Import Project="../Build.props"/>
+  <Import Project="../Build.props" />
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <DefineConstants>TRACETRACE;SERVER;WINDOWS</DefineConstants>
@@ -43,21 +43,25 @@
     <Reference Include="MonoGame.Framework.Windows.NetStandard">
       <HintPath>..\Refs\MonoGame.Framework.Windows.NetStandard.dll</HintPath>
     </Reference>
-    <Reference Include="MonoMod.Common">
-      <HintPath>..\Refs\MonoMod.Common.dll</HintPath>
-    </Reference>
+	  <Reference Include="MonoMod.Utils">
+		  <HintPath>..\Refs\MonoMod.Utils.dll</HintPath>
+	  </Reference>
     <Reference Include="MoonSharp.Interpreter">
       <HintPath>..\Refs\MoonSharp.Interpreter.dll</HintPath>
     </Reference>
     <Reference Include="XNATypes">
       <HintPath>..\Refs\XNATypes.dll</HintPath>
     </Reference>
+	  <Reference Include="NeuroSDKCsharp">
+		  <HintPath>..\Refs\NeuroSDKCsharp.dll</HintPath>
+	  </Reference>
   </ItemGroup>
 
   <PropertyGroup>
-    <RootNamespace>$(SolutionName.Replace(" ", "_"))</RootNamespace>
+    <RootNamespace>AgnesControl</RootNamespace>
     <PlatformTarget>x64</PlatformTarget>
     <GenerateDocumentationFile>False</GenerateDocumentationFile>
+    <AssemblyName>AgnesControl</AssemblyName>
   </PropertyGroup>
 
   <Target Name="CopyFiles" AfterTargets="Build">
