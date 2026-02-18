@@ -1,99 +1,93 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Text;
-using System.Runtime;
-using Barotrauma;
 using System.Runtime.CompilerServices;
+using Barotrauma;
 using NeuroSDKCsharp;
-using Microsoft.Xna.Framework;
 
 [assembly: IgnoresAccessChecksTo("Barotrauma")]
 [assembly: IgnoresAccessChecksTo("DedicatedServer")]
 [assembly: IgnoresAccessChecksTo("BarotraumaCore")]
 
-namespace AgnesControl
+namespace NeuroSauma;
+
+/// <summary>
+/// Plugin to integrate NeuroSamaSDK with Barotrauma.
+/// </summary>
+public partial class Plugin() : IAssemblyPlugin
 {
-    public partial class Plugin : IAssemblyPlugin
+    private const string CHARACTER_NAME = "Agnes Borp";
+
+    private Character? _aiAgent;
+
+    /// <summary>
+    /// Called when the mod is initialised.
+    /// </summary>
+    public void Initialize()
     {
-        Character? agnesCharacter = null;
+        LuaCsLogger.LogMessage("Initializing...");
+        SdkSetup.Initialize("Barotrauma", "ws://localhost:8000");
 
-        public Plugin()
+        // OnRoundStart
+        GameMain.LuaCs.Hook.Add("roundStart", "OnRoundStarted", delegate (object[] args)
         {
-        }
+            LuaCsLogger.LogMessage("Round Started");
 
-        public void Initialize()
-        {
-            LuaCsLogger.LogMessage("Initializing...");
-            SdkSetup.Initialize("Barotrauma", "ws://localhost:8000");
-
-            GameMain.LuaCs.Hook.Add("roundStart", "OnRoundStarted", delegate (object[] args)
+            // Get crew manager
+            var crewManager = GameMain.GameSession.CrewManager;
+            if (crewManager is null)
             {
-                LuaCsLogger.LogMessage("Got round start...");
-
-                JobPrefab job = JobPrefab.Get("assistant");
-
-                if (Submarine.MainSub == null)
-                {
-                    LuaCsLogger.LogMessage("Submarine doesnt exist yet :(");
-                    return null;
-                }
-
-                CharacterInfo characterInfo = new(CharacterPrefab.HumanSpeciesName, jobOrJobPrefab: job, variant: 0, name: "Agnes Borp")
-                {
-                    TeamID = Submarine.MainSub.TeamID
-                };
-
-                WayPoint[] spawnpoints = WayPoint.SelectCrewSpawnPoints([characterInfo], Submarine.MainSub);
-
-                if (spawnpoints == null || spawnpoints.Length <= 0)
-                {
-                    LuaCsLogger.LogMessage("Spawns couldnt be found :(");
-                    return null;
-                }
-
-                WayPoint spawnpoint = spawnpoints[0];
-
-                if (spawnpoint == null)
-                {
-                    LuaCsLogger.LogMessage("Spawns couldnt be found :(");
-                    return null;
-                }
-
-                LuaCsLogger.LogMessage($"Got spawn location: {spawnpoint}");
-
-                Entity.Spawner.AddCharacterToSpawnQueue(CharacterPrefab.HumanSpeciesName, spawnpoint.Position, characterInfo, onSpawn: character =>
-                {
-                    LuaCsLogger.LogMessage("Spawned new Character");
-
-                    GameMain.GameSession?.CrewManager?.AddCharacter(character);
-
-                    character.GiveJobItems(isPvPMode: GameMain.GameSession?.GameMode is PvPMode, spawnpoint);
-                    character.GiveIdCardTags(spawnpoint);
-                    character.Info.StartItemsGiven = true;
-
-                    agnesCharacter = character;
-                });
-
+                LuaCsLogger.LogError("Unable to get CrewManager");
                 return null;
-            });
-        }
+            }
 
-        public void OnLoadCompleted()
-        {
-            // After all plugins have loaded
-            // Put code that interacts with other plugins here.
-        }
+            // Create character
+            var job = JobPrefab.Get("assistant");
+            CharacterInfo characterInfo = new(CharacterPrefab.HumanSpeciesName, jobOrJobPrefab: job, variant: 0, name: CHARACTER_NAME)
+            {
+                TeamID = Submarine.MainSub.TeamID
+            };
 
-        public void PreInitPatching()
-        {
-            // Not yet supported: Called during the Barotrauma startup phase before vanilla content is loaded.
-        }
+            // Prepare crew manager
+            crewManager.AddCharacterInfo(characterInfo);
+            crewManager.HasBots = true;
 
-        public void Dispose()
-        {
-            // Cleanup your plugin!
-            throw new NotImplementedException();
-        }
+            // Get spawnpoint
+            var spawnpoint = WayPoint.SelectCrewSpawnPoints([characterInfo], Submarine.MainSub).FirstOrDefault();
+            if (spawnpoint is null)
+            {
+                LuaCsLogger.LogError("Unable to find spawnpoint for NPC");
+                return null;
+            }
+
+            // Spawn character
+            _aiAgent = Character.Create(characterInfo, spawnpoint.WorldPosition, characterInfo.Name, isRemotePlayer: false, hasAi: true);
+            _aiAgent.AIController.Enabled = false;
+            _aiAgent.GiveJobItems(GameMain.GameSession.GameMode is PvPMode, spawnpoint);
+            _aiAgent.GiveIdCardTags(spawnpoint);
+            _aiAgent.LoadTalents();
+            crewManager.AddCharacter(_aiAgent);
+
+            return null;
+        });
+    }
+
+    /// <summary>
+    /// Called after all plugins have loaded.
+    /// </summary>
+    public void OnLoadCompleted()
+    {
+    }
+
+    /// <summary>
+    /// Called during the Barotrauma setup phase before vanilla content is loaded.
+    /// </summary>
+    public void PreInitPatching()
+    {
+    }
+
+    /// <inheritdoc/>
+    public void Dispose()
+    {
+        _aiAgent?.Remove();
+        GameMain.LuaCs.Hook.Remove("roundStart", "OnRoundStarted");
+        GC.SuppressFinalize(this);
     }
 }

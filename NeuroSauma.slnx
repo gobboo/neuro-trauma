@@ -1,0 +1,28 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+  <Folder Name="/Linux/">
+    <Project Path="ServerProject/LinuxServer.csproj">
+      <Platform Project="x64" />
+    </Project>
+  </Folder>
+  <Folder Name="/OSX/">
+    <Project Path="ServerProject/OSXServer.csproj">
+      <Platform Project="x64" />
+    </Project>
+  </Folder>
+  <Folder Name="/Solution Items/">
+    <File Path=".editorconfig" />
+    <File Path="Directory.Build.props" />
+  </Folder>
+  <Folder Name="/Windows/">
+    <Project Path="ServerProject/WindowsServer.csproj">
+      <Platform Project="x64" />
+    </Project>
+  </Folder>
+  <Project Path="Assets/Assets.csproj">
+      <Platform Project="x64" />
+  </Project>
+  <Project Path="SharedProject/SharedSource.shproj" />
+</Solution>
